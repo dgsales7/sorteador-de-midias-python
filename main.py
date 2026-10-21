@@ -1,4 +1,3 @@
-
 import os
 import random
 import shutil
@@ -29,8 +28,8 @@ class SorteadorFotos:
     def __init__(self, janela):
         self.janela = janela
         self.janela.title("Sorteador de Fotos")
-        self.janela.geometry("720x540")
-        self.janela.minsize(620, 500)
+        self.janela.geometry("760x590")
+        self.janela.minsize(520, 380)
         self.janela.configure(bg="#f3f5fa")
 
         self.origem = tk.StringVar()
@@ -72,8 +71,44 @@ class SorteadorFotos:
         estilo.configure("TEntry", padding=8)
         estilo.configure("Horizontal.TProgressbar", thickness=12)
 
-        principal = tk.Frame(self.janela, bg="#f3f5fa", padx=25, pady=22)
-        principal.pack(fill="both", expand=True, pady=(0, 65))
+        # Barra de ações fixa: os botões não desaparecem ao reduzir a janela.
+        botoes = tk.Frame(self.janela, bg="#f3f5fa", padx=16, pady=10)
+        botoes.pack(side="bottom", fill="x")
+
+        self.botao_sortear = ttk.Button(
+            botoes, text="SORTEAR E COPIAR FOTOS", command=self.sortear
+        )
+        self.botao_sortear.pack(side="left")
+        ttk.Button(botoes, text="Limpar", command=self.limpar).pack(
+            side="left", padx=(10, 0)
+        )
+
+        # Área rolável para telas menores e janelas não maximizadas.
+        area = tk.Frame(self.janela, bg="#f3f5fa")
+        area.pack(side="top", fill="both", expand=True)
+        canvas = tk.Canvas(area, bg="#f3f5fa", highlightthickness=0)
+        barra_rolagem = ttk.Scrollbar(area, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=barra_rolagem.set)
+        barra_rolagem.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        principal = tk.Frame(canvas, bg="#f3f5fa", padx=16, pady=12)
+        janela_conteudo = canvas.create_window((0, 0), window=principal, anchor="nw")
+        principal.bind(
+            "<Configure>",
+            lambda evento: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda evento: canvas.itemconfigure(janela_conteudo, width=evento.width)
+        )
+
+        def rolar(evento):
+            if canvas.winfo_height() < principal.winfo_reqheight():
+                canvas.yview_scroll(-int(evento.delta / 120), "units")
+
+        canvas.bind("<MouseWheel>", rolar)
+        principal.bind("<MouseWheel>", rolar)
 
         ttk.Label(
             principal,
@@ -85,9 +120,9 @@ class SorteadorFotos:
             principal,
             text="Sorteie a quantidade exata de imagens que você quiser.",
             style="Texto.TLabel"
-        ).pack(anchor="w", pady=(4, 18))
+        ).pack(anchor="w", pady=(4, 10))
 
-        cartao = ttk.Frame(principal, padding=18, style="TFrame")
+        cartao = ttk.Frame(principal, padding=14, style="TFrame")
         cartao.pack(fill="both", expand=True, pady=(0, 0))
 
         ttk.Label(
@@ -108,7 +143,7 @@ class SorteadorFotos:
 
         ttk.Label(
             cartao, textvariable=self.total, style="Card.TLabel"
-        ).pack(anchor="w", pady=(0, 18))
+        ).pack(anchor="w", pady=(0, 10))
 
         ttk.Label(
             cartao,
@@ -118,7 +153,7 @@ class SorteadorFotos:
 
         ttk.Entry(
             cartao, textvariable=self.quantidade, width=18
-        ).pack(anchor="w", pady=(8, 18))
+        ).pack(anchor="w", pady=(6, 10))
 
         ttk.Label(
             cartao,
@@ -145,7 +180,7 @@ class SorteadorFotos:
             bg="#ffffff",
             fg="#667085",
             font=("Segoe UI", 9)
-        ).pack(anchor="w", pady=(0, 15))
+        ).pack(anchor="w", pady=(0, 10))
 
         self.barra = ttk.Progressbar(
             cartao, mode="determinate", maximum=100
@@ -160,22 +195,6 @@ class SorteadorFotos:
             font=("Segoe UI", 9),
             wraplength=620
         ).pack(anchor="w")
-
-        botoes = ttk.Frame(self.janela)
-        botoes.pack(fill="x", side="bottom", padx=25, pady=15)
-
-        self.botao_sortear = ttk.Button(
-            botoes,
-            text="SORTEAR E COPIAR FOTOS",
-            command=self.sortear
-        )
-        self.botao_sortear.pack(side="left")
-
-        ttk.Button(
-            botoes,
-            text="Limpar",
-            command=self.limpar
-        ).pack(side="left", padx=10)
 
     def escolher_origem(self):
         pasta = filedialog.askdirectory(
@@ -416,6 +435,5 @@ class SorteadorFotos:
 
 if __name__ == "__main__":
     janela = tk.Tk()
-    janela.state("zoomed")  # Abre maximizado no Windows
     app = SorteadorFotos(janela)
     janela.mainloop()
